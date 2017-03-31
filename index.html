@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>DevOps - Terraform</title>
+
+		<meta name="description" content="BTV Code - DevOps - Intro To Terraform">
+		<meta name="author" content="Adam Burnett">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/solarized.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<style type="text/css">
+			p { text-align: left; }
+		</style>
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h2>Who am I</h2>
+					<p style="text-align: center;"><b><u>Adam Burnett</u></b></p>
+					<ul>
+						<li>15+ years of professional software development</li>
+						<li>Former Architect @ Cox Automotive in charge of internal tooling and infrastructure teams</li>
+						<li>Currently consulting on AWS and backend development</li>
+						<li>Father, mountain biker, skier</li>
+					</ul>
+				</section>
+				<section>
+					<h2>Terraform</h2>
+					<p>
+						Terraform is a tool from HashiCorp (makers of Vagrant) 
+						that allows you to codify your infrastructure into declarative configuration files 
+						that can be shared amongst team members, treated as code, <b>edited</b>, <b>reviewed</b>, 
+						and <b>versioned</b>.
+					</p>
+					<p>
+						Use it for:
+						<ul>
+							<li>Software defined networking</li>
+							<li>Multi-tier apps</li>
+							<li>Disposable Environments</li>
+							<li>Multi-provider deployments</li>
+							<li>https://www.terraform.io/intro/use-cases.html</li>
+						</ul>
+					</p>
+					<aside class="notes">
+						Change automation
+						Handles resource dependencies
+						Preview changes (plan)
+
+						No need to reiterate use cases from web site. 
+					</aside>
+				</section>
+				<section>
+					<h2>What can I Configure</h2>
+					<p>
+						<a href="https://www.terraform.io/docs/providers/index.html">Lots!</a>
+					</p>
+				</section>
+				<section>
+					<h2>DevOps? - You Bet!</h2>
+					<p>
+						Traditional infrastructure work is done by a team other than the
+						feature development team. This work at best follows a different 
+						process from the rest of the application and at worst is entirely
+						manual.
+					</p>
+					<p>
+						Using an IaC tool makes creating an entirely self contained team
+						possible. Infrastructure provisioning can now follow the same release 
+						process as the rest of the software. <b>This is the heart and sole
+						of DevOps!</b>
+					</p>
+					<aside class="notes">
+						How are people provisioning infrastructure today?
+					</aside>
+				</section>
+				<section>
+					<h2>Configuration</h2>
+					<p>
+						Configuration syntax: HCL
+						<code>
+							<pre>
+variable "aws_region" { default = "us-east-1" }
+
+resource "aws_instance" "web" {
+	instance_type = "m1.small"
+	ami = "${lookup(var.aws_amis, var.aws_region)}"
+	vpc_security_group_ids = ["sg1234", "sg5678"]
+	tags {
+		"MyTag" = "foobar"
+	}
+}
+							</pre>
+						</code>
+					</p>
+					<aside class="notes">
+                        Talk about what each line is showing here...
+
+						HCL = Hashicorp Configuration Language
+						Supports variable interpolation, maps, arrays, etc.
+
+                        Variables can be supplied at run time via tfvars file
+                        or environment variables.
+
+						Configurations can be written in JSON as well.
+					</aside>
+				</section>
+				<section>
+					<h2>Resources</h2>
+					<p>
+						A Resource represents a component of your infrastructure. This
+						could be a VM instance, firewall rule, user permission, networking
+						configuration, etc.
+					</p>
+					<p>
+						A resource consists of a name, type and configuration and is specific to a provider.
+						<code>
+							<pre>
+
+resource "aws_instance" "web" {
+	#     ^^^type^^^    ^name
+	# configuration
+	instance_type = "m1.small"
+	...
+}
+							</pre>
+						</code>
+				    </p>
+					<aside class="notes">
+						Resources are the most important part of terraform and what you 
+						will be mostly managing.
+
+						Terraform is not an abstraction layer. You still know must know how
+						to configure resources for a given provider.
+					</aside>
+				</section>
+				<section>
+					<h2>Resources</h2>
+					<p>
+						Resource dependencies can be either implicit or explicit. Terraform will 
+						ensure correct resource creation / destruction order.
+						<code>
+							<pre>
+resource "aws_security_group" "global-egress" {
+  name        = "global-egress"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "web" {
+  vpc_security_group_ids = ["${aws_security_group.global-egress.id}"]
+  ...
+}
+
+							</pre>
+						</code>
+					</p>
+					<aside class="notes">
+						Resource dependencies can also be specified via an expicit depends_on
+						array in the resource configuration. In practice I personally have not
+						come across a need to use this but if you have an instance where
+						resource A must be available before resource B and there are no other dependencies
+						between them this could be useful. Perhaps a nat instance before a server
+						on a private subnet.
+					</aside>
+				</section>
+				<section>
+					<h2>Resources</h2>
+					<p>
+						Multiples of a resource can be created via a "count". The index
+						of the instance can be used control values on a per-instance basis where 
+						needed.
+						<code>
+							<pre>
+variable "instance_ips" {
+  default = {
+    "0" = "10.11.12.100"
+    "1" = "10.11.12.101"
+    "2" = "10.11.12.102"
+  }
+}
+
+resource "aws_instance" "app" {
+  count = "3"
+  private_ip = "${lookup(var.instance_ips, count.index)}"
+  # ...
+}
+							</pre>
+						</code>
+					</p>
+				</section>
+				<section>
+					<h2>More about count</h2>
+					<p>
+						Resources with a count must be referenced by index as well.
+						<code>
+							<pre>
+${aws_instance.app.0.id} # the first one
+${aws_instance.app.*.id} # all of them
+							</pre>
+						</code>
+					</p>
+					<p>
+						Referencing all instances with *
+						<code>
+							<pre>
+resource "aws_elb" "web" {
+  instances       = ["${aws_instance.app.*.id}"]
+}
+							</pre>
+						</code>
+					</p>
+					<aside class="notes">
+						There is more to resources but this covers the basics.
+					</aside>
+				</section>
+				<section>
+					<h2>Provisioners</h2>
+					<p>
+						Provisioners are used to execute scripts on a local or remote
+						machine as part of resource creation or destruction. Provisioners
+						can be used to bootstrap a resource, cleanup before destroy, run
+						configuration management, etc.
+						<code>
+							<pre>
+resource "aws_instance" "app" {
+  ...
+  provisioner "remote-exec" {
+    inline = [
+     "apt-get update",
+     "consul join ${aws_instance.web.private_ip}",
+    ]
+  }
+}
+							</pre>
+						</code>
+					</p>
+					<p>
+						Connections via SSH and WinRM supported.
+					</p>
+					<aside class="notes">
+						Provisioners only run on instance creation. They cannot be re-run on
+						an existing resource. As such they can be good for quick configuration
+						but should not be used as ongoing management of existing resources.
+						They also add extra overhead around secret management for connection
+						credentials.
+					</aside>
+				</section>
+				<section>
+					<h2>Providers</h2>
+					<p>
+						A provider is what manages the resources you define. The provider
+						name will match the prefix of the resource name.
+					</p>
+					<p>
+						Providers are defined in the terraform configuration.
+						<code>
+							<pre>
+provider "aws" {
+    access_key = "foo"
+    secret_key = "bar"
+    region = "us-east-1"
+}
+
+provider "digitalocean" {
+  token = "${var.do_token}"
+}
+							</pre>
+						</code>
+					</p>
+					<aside class="notes">
+						These are all the names we saw before under the list of
+						providers we saw earlier.
+					</aside>
+				</section>
+				<section>
+					<h1>Demo Time</h1>
+				</section>
+				<section>
+					<h2>State</h2>
+					<p>
+						Terraform must store state containing its view of your
+						managed infrastructure. This state is used to create
+						the plan for applying changes.
+					</p>
+					<p>
+						There is an in-depth explination on why this state is needed
+						on the Terraform site at <a href="https://www.terraform.io/docs/state/purpose.html">
+						https://www.terraform.io/docs/state/purpose.html</a>
+					</p>
+					<aside class="notes">
+						Mapping to the Real World - not all provider APIs allow terraform to look up state in real time
+						(i.e. not all providers have tags like AWS)
+						Metadata - dependencies, resource deletion
+						Performance - cache of the attribute values for all resources in the state
+					</aside>
+				</section>
+				<section>
+					<h2>State - What you need to know</h2>
+					<p>
+						State can be stored in a local file or in a remote store. How you
+						plan on using Terraform and integrating it into your organization
+						will determine your best course of action.
+					</p>
+					<p>
+						<span>Remote Data Stores</span>
+						<ul>
+							<li>S3 (w/ DynamoDB for locking)</li>
+							<li>Artifactory</li>
+							<li>Azure</li>
+							<li>gcs</li>
+							<li>http (roll your own)</li>
+							<li>...and <a href="https://www.terraform.io/docs/backends/types/index.html">more</a></li>
+						</ul>
+					</p>
+				</section>
+				<section>
+					<h2>Locking?</h2>
+					<p>
+						For one developer using local state committed to source
+						control is good enough. But what if you have a team? Multiple
+						people applying changes at the same time can corrupt the state.
+					</p>
+					<p>
+						As of Terraform 0.9 there is native support for locking the state in
+						a backend. This will allow only one change at a time to be applied.
+					</p>
+					<p>
+						3rd party tools like <a href="https://github.com/gruntwork-io/terragrunt">Terragrunt</a>
+						have sprung up to help manage organizational issues that arise with integrating
+						Terraform into the enterprise.
+					</p>
+                    <aside class="notes">
+                        S3 and Consul are the only backends that support locking.
+                    </aside>
+				</section>
+				<section>
+					<h2>Demo Time!</h2>
+					- look at a local state file
+					   - terraform show
+					- show how to init a remote state
+				</section>
+                <section>
+                    <h2>Data Sources</h2>
+                    <p>
+                        TBD: talk about state as a data source
+                    </p>
+                </section>
+                <section>
+                    <h2>Modules</h2>
+                    <p>
+                        Modules are used to create reusable components in Terraform
+                        as well as for basic code organization.
+                    </p>
+                    <p>
+                        Modules are most useful when defined with input and output parameters.
+                        This allows you to create generic components that can be imported into
+                        any configuration.
+                    </p>
+                    <p>
+                        Ok, let's just look at one...
+                    </p>
+                </section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				//center: true,
+
+				margin: 0.02,
+				minScale: 0.1,
+				maxScale: 1.5,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					// { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					// { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
