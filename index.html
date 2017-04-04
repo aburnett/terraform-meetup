@@ -329,7 +329,7 @@ provider "digitalocean" {
 					</aside>
 				</section>
 				<section>
-					<h2>State - What you need to know</h2>
+					<h2>State</h2>
 					<p>
 						State can be stored in a local file or in a remote store. How you
 						plan on using Terraform and integrating it into your organization
@@ -347,6 +347,15 @@ provider "digitalocean" {
 						</ul>
 					</p>
 				</section>
+                <section>
+                    <h2>State</h2>
+                    <p>
+                        State can be inspected with <code>terraform show</code> and <code>terraform console</code>.
+                    </p>
+                    <p>
+                        <b>Secrets will be in plain text!</b>
+                    </p>
+                </section>
 				<section>
 					<h2>Locking?</h2>
 					<p>
