@@ -41,6 +41,7 @@ resource "aws_instance" "app" {
   ami           = "ami-acfee4bb"
   instance_type = "t2.micro"
   key_name = "${var.key}"
+  availability_zone = "us-east-1a"
   count = 2
   security_groups = [
     "${aws_security_group.global-egress.name}",
@@ -50,6 +51,7 @@ resource "aws_instance" "app" {
 
   tags {
     Name = "btv-code-${count.index}"
+    Foo = "bar"
   }
 
   provisioner "file" {

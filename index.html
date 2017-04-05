@@ -89,8 +89,8 @@
 					<h2>DevOps? - You Bet!</h2>
 					<p>
 						Traditional infrastructure work is done by a team other than the
-						feature development team. This work at best follows a different 
-						process from the rest of the application and at worst is entirely
+						feature development team. At best this work follows a different
+						process from the rest of the application. At worst it is entirely
 						manual.
 					</p>
 					<p>
@@ -100,6 +100,7 @@
 						of DevOps!</b>
 					</p>
 					<aside class="notes">
+                        So how does this fit in with devops?
 						How are people provisioning infrastructure today?
 					</aside>
 				</section>
@@ -112,6 +113,7 @@
 variable "aws_region" { default = "us-east-1" }
 
 resource "aws_instance" "web" {
+    count = "${var.enabled ? 1 : 0}"
 	instance_type = "m1.small"
 	ami = "${lookup(var.aws_amis, var.aws_region)}"
 	vpc_security_group_ids = ["sg1234", "sg5678"]
@@ -123,13 +125,13 @@ resource "aws_instance" "web" {
 						</code>
 					</p>
 					<aside class="notes">
-                        Talk about what each line is showing here...
+                        Talk about what each line is showing here...<br/><br/>
 
 						HCL = Hashicorp Configuration Language
-						Supports variable interpolation, maps, arrays, etc.
+						Supports variable interpolation, maps, arrays, etc.<br/><br/>
 
                         Variables can be supplied at run time via tfvars file
-                        or environment variables.
+                        or environment variables.<br/><br/>
 
 						Configurations can be written in JSON as well.
 					</aside>
@@ -166,8 +168,16 @@ resource "aws_instance" "web" {
 				<section>
 					<h2>Resources</h2>
 					<p>
-						Resource dependencies can be either implicit or explicit. Terraform will 
+						Resources have inputs and outputs. Outputs can be ref
+					</p>
+				</section>
+				<section>
+					<h2>Resources</h2>
+					<p>
+						Resources have inputs and outputs. Outputs can be referenced to create
+						implicit dependencies between resources. Terraform will
 						ensure correct resource creation / destruction order.
+
 						<code>
 							<pre>
 resource "aws_security_group" "global-egress" {
@@ -225,7 +235,7 @@ resource "aws_instance" "app" {
 				<section>
 					<h2>More about count</h2>
 					<p>
-						Resources with a count must be referenced by index as well.
+						Resources with a count are referenced by index.
 						<code>
 							<pre>
 ${aws_instance.app.0.id} # the first one
@@ -272,7 +282,7 @@ resource "aws_instance" "app" {
 						Connections via SSH and WinRM supported.
 					</p>
 					<aside class="notes">
-						Provisioners only run on instance creation. They cannot be re-run on
+						Provisioners only run on instance creation/update/deletion. They cannot be re-run on
 						an existing resource. As such they can be good for quick configuration
 						but should not be used as ongoing management of existing resources.
 						They also add extra overhead around secret management for connection
@@ -308,6 +318,11 @@ provider "digitalocean" {
 				</section>
 				<section>
 					<h1>Demo Time</h1>
+					<aside class="notes">
+						terraform plan<br/>
+						show variable passing<br/>
+						show incremental updates<br/>
+					</aside>
 				</section>
 				<section>
 					<h2>State</h2>
@@ -355,6 +370,9 @@ provider "digitalocean" {
                     <p>
                         <b>Secrets will be in plain text!</b>
                     </p>
+					<aside class="notes">
+						Inspect state from resources demo
+					</aside>
                 </section>
 				<section>
 					<h2>Locking?</h2>
@@ -403,6 +421,16 @@ provider "digitalocean" {
                         Ok, let's just look at one...
                     </p>
                 </section>
+				<section>
+					<h2>Modules</h2>
+					<p>
+						Modules can be referenced locally or imported from source control.
+					</p>
+					<p>
+						Collection of terraform community modules can be found at
+						<a href="https://github.com/terraform-community-modules">https://github.com/terraform-community-modules</a>
+					</p>
+				</section>
 			</div>
 		</div>
 
